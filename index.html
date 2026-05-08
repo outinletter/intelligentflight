@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIFAS - Aircraft Intelligent Flight Assistance System</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --navy:#020B1A;--navy2:#071428;--blue1:#0A2240;--blue2:#0D3060;
+    --accent:#00C6FF;--accent2:#0072E5;--accent3:#00FFB2;
+    --text:#E8F4FF;--muted:#7AAED6;--border:rgba(0,198,255,0.15);
+    --card:rgba(10,34,64,0.7);--glow:rgba(0,198,255,0.08)
+  }
+  html{scroll-behavior:smooth}
+  body{background:#020B1A;color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7;overflow-x:hidden}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(2,11,26,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .logo{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:700;letter-spacing:2px;color:var(--accent)}
+  .logo-icon{width:32px;height:32px}
+  .nav-links{display:flex;gap:2rem;list-style:none}
+  .nav-links a{color:var(--muted);text-decoration:none;font-size:.875rem;letter-spacing:.05em;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-cta{padding:.5rem 1.25rem;border:1px solid var(--accent);color:var(--accent);border-radius:4px;font-size:.875rem;background:transparent;transition:all .2s;letter-spacing:.05em;text-decoration:none;display:inline-flex;align-items:center}
+  .nav-cta:hover{background:rgba(0,198,255,0.1)}
+
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(0,114,229,0.12) 0%,transparent 70%);pointer-events:none}
+  .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,198,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,198,255,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:.4rem 1rem;border:1px solid var(--border);border-radius:20px;font-size:.78rem;color:var(--accent);letter-spacing:.1em;margin-bottom:2rem;background:rgba(0,198,255,0.05)}
+  .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1{font-size:clamp(2.2rem,5vw,4rem);font-weight:700;line-height:1.15;letter-spacing:-.02em;margin-bottom:1rem;max-width:900px}
+  h1 span{background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .hero-sub{font-size:1.1rem;color:var(--muted);max-width:680px;margin:0 auto 2.5rem}
+  .hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+  .btn-primary{padding:.85rem 2rem;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none;border-radius:4px;font-size:.95rem;font-weight:600;cursor:pointer;letter-spacing:.03em;transition:opacity .2s}
+  .btn-primary:hover{opacity:.85}
+  .btn-ghost{padding:.85rem 2rem;background:transparent;color:var(--accent);border:1px solid var(--border);border-radius:4px;font-size:.95rem;cursor:pointer;letter-spacing:.03em;transition:all .2s}
+  .btn-ghost:hover{border-color:var(--accent);background:rgba(0,198,255,0.05)}
+  .hero-stats{display:flex;gap:3rem;justify-content:center;margin-top:4rem;flex-wrap:wrap}
+  .stat{text-align:center}
+  .stat-n{font-size:2rem;font-weight:700;color:var(--accent)}
+  .stat-l{font-size:.78rem;color:var(--muted);letter-spacing:.08em;margin-top:.2rem}
+
+  .hud-section{padding:5rem 2rem;background:var(--navy2)}
+  .hud-wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+  .hud-display{position:relative;background:#000;border:1px solid var(--border);border-radius:8px;overflow:hidden;aspect-ratio:16/10}
+  canvas#hud{width:100%;height:100%;display:block}
+  .section-label{font-size:.75rem;color:var(--accent);letter-spacing:.15em;margin-bottom:.75rem;text-transform:uppercase}
+  .hud-text h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;margin-bottom:1rem;line-height:1.3}
+  .hud-text p{color:var(--muted);margin-bottom:1.5rem;font-size:.95rem}
+  .indicator-row{display:flex;flex-direction:column;gap:.75rem}
+  .indicator{display:flex;align-items:center;gap:.75rem;font-size:.875rem}
+  .ind-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .ind-green{background:#00FFB2}
+  .ind-blue{background:var(--accent)}
+  .ind-amber{background:#FFB800}
+
+  .features{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+  .section-header{text-align:center;margin-bottom:4rem}
+  .section-header h2{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:700;margin-bottom:.75rem}
+  .section-header p{color:var(--muted);max-width:560px;margin:0 auto}
+  .features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem}
+  .feat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2rem;transition:border-color .3s,background .3s;position:relative;overflow:hidden}
+  .feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .3s}
+  .feat-card:hover{border-color:rgba(0,198,255,0.4);background:rgba(10,34,64,0.9)}
+  .feat-card:hover::before{opacity:1}
+  .feat-num{font-size:.7rem;color:var(--accent);letter-spacing:.15em;margin-bottom:.75rem;font-weight:600}
+  .feat-card h3{font-size:1.1rem;font-weight:600;margin-bottom:.75rem}
+  .feat-card p{color:var(--muted);font-size:.875rem;line-height:1.7;margin-bottom:1.25rem}
+  .feat-tags{display:flex;flex-wrap:wrap;gap:.5rem}
+  .tag{padding:.2rem .65rem;border:1px solid var(--border);border-radius:3px;font-size:.72rem;color:var(--muted);letter-spacing:.05em}
+  .feat-icon{width:40px;height:40px;border-radius:6px;background:rgba(0,198,255,0.08);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem}
+  .feat-icon svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+  .arch-section{padding:6rem 2rem;background:var(--navy2)}
+  .arch-inner{max-width:1100px;margin:0 auto}
+  .sensors-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:3rem}
+  .sensor-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;text-align:center}
+  .sensor-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,198,255,0.08);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+  .sensor-icon svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .sensor-card h4{font-size:.875rem;font-weight:600;margin-bottom:.4rem}
+  .sensor-card p{font-size:.78rem;color:var(--muted);line-height:1.5}
+
+  .benefits{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+  .benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+  .benefit-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2rem;text-align:center}
+  .benefit-num{font-size:2.5rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+  .benefit-card h3{font-size:1rem;font-weight:600;margin-bottom:.75rem}
+  .benefit-card p{color:var(--muted);font-size:.875rem;line-height:1.7}
+
+  .apps-section{padding:6rem 2rem;background:var(--navy2)}
+  .apps-inner{max-width:1100px;margin:0 auto}
+  .apps-list{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-top:3rem}
+  .app-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem 1rem;text-align:center;font-size:.85rem;color:var(--muted);transition:all .2s}
+  .app-item:hover{border-color:rgba(0,198,255,0.4);color:var(--text)}
+  .app-item svg{width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto .75rem;display:block}
+
+  .slogan-section{padding:8rem 2rem;text-align:center;position:relative;overflow:hidden}
+  .slogan-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(0,114,229,0.1) 0%,transparent 70%);pointer-events:none}
+  .slogan-section h2{font-size:clamp(1.8rem,4vw,3rem);font-weight:700;margin-bottom:1rem;line-height:1.3}
+  .slogan-section h2 span{background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .slogan-section p{color:var(--muted);font-size:1.05rem;margin-bottom:2.5rem}
+  .divider{width:60px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent3));margin:1.5rem auto}
+  .cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+  .cta-btns a{padding:.85rem 2rem;border-radius:4px;font-size:.95rem;cursor:pointer;letter-spacing:.03em;text-decoration:none;display:inline-flex;align-items:center}
+  .cta-primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none;font-weight:600;transition:opacity .2s}
+  .cta-primary:hover{opacity:.85}
+  .cta-ghost{background:transparent;color:var(--accent);border:1px solid var(--border);transition:all .2s}
+  .cta-ghost:hover{border-color:var(--accent);background:rgba(0,198,255,0.05)}
+
+  footer{padding:2.5rem 3rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--navy)}
+  .footer-logo{font-size:.875rem;font-weight:700;color:var(--accent);letter-spacing:.1em}
+  footer p{color:var(--muted);font-size:.8rem}
+
+  @media(max-width:768px){
+    nav{padding:1rem 1.5rem}
+    .nav-links{display:none}
+    .hud-wrap{grid-template-columns:1fr;gap:2rem}
+    .features-grid{grid-template-columns:1fr}
+    .sensors-grid{grid-template-columns:repeat(2,1fr)}
+    .benefits-grid{grid-template-columns:1fr}
+    .apps-list{grid-template-columns:repeat(3,1fr)}
+    footer{flex-direction:column;gap:1rem;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 3L29 10V22L16 29L3 22V10L16 3Z" stroke="#00C6FF" stroke-width="1.5" fill="rgba(0,198,255,0.05)"/>
+      <path d="M16 8L24 12.5V21.5L16 26L8 21.5V12.5L16 8Z" stroke="#00C6FF" stroke-width="1" opacity=".5" fill="none"/>
+      <circle cx="16" cy="17" r="3" fill="#00FFB2"/>
+      <path d="M16 3V8M16 24V29M3 10L8 12.5M24 21.5L29 24M29 10L24 12.5M8 21.5L3 24" stroke="#00C6FF" stroke-width="1" opacity=".4"/>
+    </svg>
+    AIFAS
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Key Features</a></li>
+    <li><a href="#system">System</a></li>
+    <li><a href="#benefits">Benefits</a></li>
+    <li><a href="#applications">Applications</a></li>
+  </ul>
+  <a class="nav-cta" href="mailto:bongsjeon@koreanair.com">Contact Us</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="badge">
+    <span class="badge-dot"></span>
+    NEXT-GEN AVIATION SAFETY TECHNOLOGY
+  </div>
+  <h1>Expanding Pilot Vision,<br><span>Predicting Risk.</span></h1>
+  <p class="hero-sub">AIFAS integrates cockpit forward cameras with GPS, altitude, speed, attitude, airport maps, and surrounding traffic data — enabling intuitive situational awareness and safer flight operations.</p>
+  <div class="hero-btns">
+    <button class="btn-primary">Explore the System</button>
+    <a class="btn-ghost" href="mailto:bongsjeon@koreanair.com">Request Technical Docs</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-n">4+</div>
+      <div class="stat-l">CORE MODULES</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">5</div>
+      <div class="stat-l">PLATFORMS</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">360°</div>
+      <div class="stat-l">SITUATIONAL AWARENESS</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n">RT</div>
+      <div class="stat-l">REAL-TIME ANALYSIS</div>
+    </div>
+  </div>
+</section>
+
+<section class="hud-section">
+  <div class="hud-wrap">
+    <div class="hud-display">
+      <canvas id="hud"></canvas>
+    </div>
+    <div class="hud-text">
+      <div class="section-label">Real-Time Situational Awareness</div>
+      <h2>Everything the pilot sees,<br>made smarter.</h2>
+      <p>Even in low-visibility or night operations, AIFAS overlays runway centerlines, taxiways, and traffic data onto the cockpit display — maximizing pilot awareness at every phase of flight.</p>
+      <div class="indicator-row">
+        <div class="indicator"><span class="ind-dot ind-green"></span>Approach stability confirmed — Stable</div>
+        <div class="indicator"><span class="ind-dot ind-blue"></span>Runway centerline aligned</div>
+        <div class="indicator"><span class="ind-dot ind-amber"></span>Surface traffic monitoring active</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="section-header">
+    <div class="section-label">CORE FEATURES</div>
+    <h2>Four Intelligent Modules</h2>
+    <p>From final approach to taxi operations — intelligent support at every stage of flight.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="feat-num">MODULE 01</div>
+      <h3>Approach Stability Monitoring</h3>
+      <p>Analyzes runway centerline alignment and descent stability using cockpit camera imagery and GPS/altitude data. Provides visual and voice alerts when speed, descent rate, or glide path deviate from safe ranges.</p>
+      <div class="feat-tags">
+        <span class="tag">Unstable Approach Warning</span>
+        <span class="tag">Glide Path Monitoring</span>
+        <span class="tag">Energy State Prediction</span>
+        <span class="tag">Runway Alignment</span>
+      </div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <div class="feat-num">MODULE 02</div>
+      <h3>Energy-Based Landing Assistance</h3>
+      <p>Predicts landing feasibility zones and calculates runway reachability in real time based on aircraft speed and altitude. Detects excessive speed or insufficient energy conditions early to support go-around decisions.</p>
+      <div class="feat-tags">
+        <span class="tag">Landing Zone Prediction</span>
+        <span class="tag">Go-Around Decision Support</span>
+        <span class="tag">Real-time Reachability</span>
+      </div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="feat-num">MODULE 03</div>
+      <h3>Ground Collision Prevention</h3>
+      <p>Detects nearby aircraft, vehicles, and obstacles during taxi using camera feeds and airport map data. Immediately alerts pilots of runway crossing conflicts and potential close-collision situations.</p>
+      <div class="feat-tags">
+        <span class="tag">Runway Incursion Alert</span>
+        <span class="tag">Taxiway Guidance</span>
+        <span class="tag">Surface Traffic Monitor</span>
+        <span class="tag">Blind Spot Detection</span>
+      </div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v3l2 2"/></svg>
+      </div>
+      <div class="feat-num">MODULE 04</div>
+      <h3>Enhanced Situational Awareness</h3>
+      <p>Overlays runway centerlines, taxiways, and aircraft position data onto camera imagery even in low-visibility or night conditions. Pilots can quickly identify hazards through an intuitive heads-up interface.</p>
+      <div class="feat-tags">
+        <span class="tag">AR Overlay</span>
+        <span class="tag">Night Vision Support</span>
+        <span class="tag">Low Visibility Ops</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="arch-section" id="system">
+  <div class="arch-inner">
+    <div class="section-header">
+      <div class="section-label">SYSTEM ARCHITECTURE</div>
+      <h2>Integrated Sensor Fusion</h2>
+      <p>Four core data sources fused in real time to deliver complete situational awareness.</p>
+    </div>
+    <div class="sensors-grid">
+      <div class="sensor-card">
+        <div class="sensor-icon">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <h4>Cockpit Forward Camera</h4>
+        <p>High-resolution real-time visual environment analysis</p>
+      </div>
+      <div class="sensor-card">
+        <div class="sensor-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        <h4>GPS / INS Navigation</h4>
+        <p>Precision positioning and inertial navigation data integration</p>
+      </div>
+      <div class="sensor-card">
+        <div class="sensor-icon">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h4>Altitude, Speed & Attitude</h4>
+        <p>Real-time aircraft state and energy monitoring</p>
+      </div>
+      <div class="sensor-card">
+        <div class="sensor-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h4>Airport Map & Traffic</h4>
+        <p>Airport layout and surrounding traffic data analysis</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="benefits" id="benefits">
+  <div class="section-header">
+    <div class="section-label">EXPECTED BENEFITS</div>
+    <h2>Three Core Values</h2>
+    <p>Enhanced safety, operational efficiency, and the foundation for autonomous flight.</p>
+  </div>
+  <div class="benefits-grid">
+    <div class="benefit-card">
+      <div class="benefit-num">Safety+</div>
+      <h3>Enhanced Safety</h3>
+      <p>Reduces pilot workload and decreases accident risks during approach and taxi operations. Early hazard detection contributes to accident prevention.</p>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-num">Ops+</div>
+      <h3>Improved Operational Efficiency</h3>
+      <p>Supports more accurate and stable operations even in complex airport environments. Precise information delivery minimizes operational delays.</p>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-num">Future+</div>
+      <h3>Foundation for Autonomous Flight</h3>
+      <p>Strengthens digital situational awareness technologies that form the foundation for future autonomous flight systems and UAM.</p>
+    </div>
+  </div>
+</section>
+
+<section class="apps-section" id="applications">
+  <div class="apps-inner">
+    <div class="section-header">
+      <div class="section-label">APPLICATIONS</div>
+      <h2>Built for Every Platform</h2>
+      <p>From commercial airliners to military and UAM — AIFAS adapts to all aviation platforms.</p>
+    </div>
+    <div class="apps-list">
+      <div class="app-item">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Commercial Aircraft
+      </div>
+      <div class="app-item">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.69a19.79 19.79 0 01-3.07-8.67A2 2 0 012.18 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.15a16 16 0 006 6l1.51-1.51a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0121 15h1"/></svg>
+        Business Jets
+      </div>
+      <div class="app-item">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Military Aircraft
+      </div>
+      <div class="app-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Urban Air Mobility
+      </div>
+      <div class="app-item">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+        Unmanned Systems
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slogan-section">
+  <div class="slogan-bg"></div>
+  <div class="section-label">OUR MISSION</div>
+  <div class="divider"></div>
+  <h2>"Safer Approaches,<br><span>Smarter Flights."</span></h2>
+  <p>Expanding pilot vision. Predicting risk. Enabling the future of aviation.</p>
+  <div class="cta-btns">
+    <a class="cta-btns__a cta-primary" href="mailto:bongsjeon@koreanair.com" style="padding:.85rem 2rem;border-radius:4px;font-size:.95rem;letter-spacing:.03em;text-decoration:none;display:inline-flex;align-items:center;background:linear-gradient(135deg,#0072E5,#00C6FF);color:#fff;font-weight:600;transition:opacity .2s">Partnership Inquiry</a>
+    <a class="cta-ghost" href="mailto:bongsjeon@koreanair.com" style="padding:.85rem 2rem;border-radius:4px;font-size:.95rem;letter-spacing:.03em;text-decoration:none;display:inline-flex;align-items:center;background:transparent;color:#00C6FF;border:1px solid rgba(0,198,255,0.15);transition:all .2s">Request a Demo</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">AIFAS</div>
+  <p>Aircraft Intelligent Flight Assistance System</p>
+  <p>© 2025 AIFAS. All rights reserved.</p>
+</footer>
+
+<script>
+(function(){
+  var canvas = document.getElementById('hud');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W, H, t = 0, raf;
+
+  function resize(){
+    var rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    W = canvas.width;
+    H = canvas.height;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#000010';
+    ctx.fillRect(0,0,W,H);
+
+    var pitch = Math.sin(t*0.3)*0.03;
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    var hy = H*pitch;
+
+    ctx.fillStyle='#001830';
+    ctx.fillRect(-W/2,-H/2,W,H);
+    ctx.fillStyle='#0A1208';
+    ctx.fillRect(-W/2,hy,W,H/2+20);
+
+    ctx.strokeStyle='rgba(0,198,255,0.6)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(-W/2,hy);
+    ctx.lineTo(W/2,hy);
+    ctx.stroke();
+
+    for(var i=-2;i<=2;i++){
+      if(i===0) continue;
+      var py=hy+i*(H/10);
+      ctx.strokeStyle='rgba(0,198,255,0.35)';
+      ctx.lineWidth=0.5;
+      ctx.beginPath();
+      ctx.moveTo(-40,py); ctx.lineTo(-10,py);
+      ctx.moveTo(10,py);  ctx.lineTo(40,py);
+      ctx.stroke();
+      ctx.fillStyle='rgba(0,198,255,0.5)';
+      ctx.font='9px monospace';
+      ctx.textAlign='left';
+      ctx.fillText((i*5)+'',45,py+3);
+    }
+
+    var rx=Math.sin(t*0.2)*(W*0.03);
+    ctx.strokeStyle='#00FFB2';
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([8,4]);
+    ctx.beginPath();
+    ctx.moveTo(rx,hy+10);
+    ctx.lineTo(rx,H/2+10);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    var rw=W*0.22+Math.sin(t*0.5)*2;
+    var rh=H*0.32;
+    ctx.strokeStyle='#00FFB2';
+    ctx.lineWidth=1;
+    ctx.strokeRect(-rw/2+rx,hy+5,rw,rh);
+
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(-30,0); ctx.lineTo(-8,0);
+    ctx.moveTo(30,0);  ctx.lineTo(8,0);
+    ctx.moveTo(0,8);   ctx.lineTo(0,3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0,0,3,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.restore();
+
+    var spd=(138+Math.sin(t*0.7)*3).toFixed(0);
+    var alt=(2800+Math.sin(t*0.4)*20).toFixed(0);
+    var vs=(-720+Math.sin(t*0.5)*15).toFixed(0);
+    var hdg=(275+Math.sin(t*0.2)*1).toFixed(0);
+
+    ctx.fillStyle='rgba(0,20,40,0.75)';
+    ctx.fillRect(8,H*0.2,48,H*0.6);
+    ctx.strokeStyle='rgba(0,198,255,0.2)';
+    ctx.lineWidth=0.5;
+    ctx.strokeRect(8,H*0.2,48,H*0.6);
+    ctx.fillStyle='#00C6FF';
+    ctx.font='bold 13px monospace';
+    ctx.textAlign='center';
+    ctx.fillText(spd,32,H/2+5);
+    ctx.fillStyle='rgba(0,198,255,0.5)';
+    ctx.font='8px monospace';
+    ctx.fillText('KTS',32,H/2+16);
+
+    ctx.fillStyle='rgba(0,20,40,0.75)';
+    ctx.fillRect(W-56,H*0.2,48,H*0.6);
+    ctx.strokeStyle='rgba(0,198,255,0.2)';
+    ctx.strokeRect(W-56,H*0.2,48,H*0.6);
+    ctx.fillStyle='#00C6FF';
+    ctx.font='bold 13px monospace';
+    ctx.textAlign='center';
+    ctx.fillText(alt,W-32,H/2+5);
+    ctx.fillStyle='rgba(0,198,255,0.5)';
+    ctx.font='8px monospace';
+    ctx.fillText('FT',W-32,H/2+16);
+
+    ctx.fillStyle='rgba(0,20,40,0.75)';
+    ctx.fillRect(W/2-32,8,64,24);
+    ctx.fillStyle='#00C6FF';
+    ctx.font='bold 12px monospace';
+    ctx.textAlign='center';
+    ctx.fillText(hdg+'\xb0',W/2,24);
+
+    ctx.fillStyle='rgba(0,20,40,0.8)';
+    ctx.fillRect(8,8,110,60);
+    ctx.strokeStyle='rgba(0,255,178,0.3)';
+    ctx.lineWidth=0.5;
+    ctx.strokeRect(8,8,110,60);
+    ctx.fillStyle='#00FFB2';
+    ctx.font='8px monospace';
+    ctx.textAlign='left';
+    ctx.fillText('STABLE',16,24);
+    ctx.fillStyle='#00C6FF';
+    ctx.fillText('VS  '+vs+' FPM',16,38);
+    ctx.fillStyle='rgba(0,198,255,0.6)';
+    ctx.fillText('ALIGNED',16,52);
+
+    ctx.fillStyle='rgba(0,20,40,0.8)';
+    ctx.fillRect(W-116,8,108,22);
+    ctx.fillStyle='rgba(0,198,255,0.6)';
+    ctx.font='8px monospace';
+    ctx.textAlign='left';
+    ctx.fillText('GLIDE PATH  ON',W-108,22);
+
+    t+=0.016;
+    raf=requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize',function(){
+    resize();
+  });
+
+  resize();
+  draw();
+})();
+</script>
+</body>
+</html>
